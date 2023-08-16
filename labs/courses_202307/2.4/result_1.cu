@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
     int m=100;
     int n=100;
     int k=100;
-
+    
     int *h_a = (int*)malloc(sizeof(int)*m*n);
     int *h_b = (int*)malloc(sizeof(int)*n*k);
     int *h_c = (int*)malloc(sizeof(int)*m*k);
