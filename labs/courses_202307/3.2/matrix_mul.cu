@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include "error.cuh"
 
 #define BLOCK_SIZE 16
 
@@ -44,7 +45,11 @@ int main(int argc, char const *argv[])
     cudaMallocHost((void **) &h_b, sizeof(int)*n*k);
     cudaMallocHost((void **) &h_c, sizeof(int)*m*k);
     cudaMallocHost((void **) &h_cc, sizeof(int)*m*k);
-
+    // cudaMallocHost 和 malloc是等价的
+    
+    cudaEvent_t start, stop;
+    CHECK(cudaEventCreate(&start));
+    CHECK(cudaEventCreate(&stop)):
     for (int i = 0; i < m; ++i) {
         for (int j = 0; j < n; ++j) {
             h_a[i * n + j] = rand() % 1024;
@@ -70,9 +75,16 @@ int main(int argc, char const *argv[])
     unsigned int grid_cols = (k + BLOCK_SIZE - 1) / BLOCK_SIZE;
     dim3 dimGrid(grid_cols, grid_rows);
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-   
-    gpu_matrix_mult<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, m, n, k);    
 
+    CHECK(cudaEventRecord(start));
+    gpu_matrix_mult<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, m, n, k);    
+    CHECK(cudaEventRecord(stop));
+    CHECK(cudaEventSynchronize(stop));
+    float elapsed_time;
+    CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
+    CHECK(cudaEventDestroy(start));
+    CHECK(cudaEventDestroy(stop));
+    printf("elasped time %g ms", elapsed_time);
     cudaMemcpy(h_c, d_c, sizeof(int)*m*k, cudaMemcpyDeviceToHost);
     //cudaThreadSynchronize();
 
@@ -98,7 +110,7 @@ int main(int argc, char const *argv[])
     else
     {
         printf("Error!!!\n");
-    }
+    }-
 
     // free memory
     cudaFree(d_a);
