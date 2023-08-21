@@ -51,56 +51,50 @@ __managed__ int c_cpu[M*K];
 
 #define BLOCK_SIZE 16
 
-__global__ void gpu_matrix(int* a, int* b, int* c, int m, int n, int k)
-{
+__global__ void gpu_matrix(int *a, int *b, int *c, int m, int n, int k){
+    
+
     __shared__ int sub_a[BLOCK_SIZE][BLOCK_SIZE];
     __shared__ int sub_b[BLOCK_SIZE][BLOCK_SIZE];
 
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockDim.x * blockIdx.x + threadIdx.x;
+    int y = blockDim.y * blockIdx.y + threadIdx.y;
 
-    int tmp =0;
+    int temp = 0;
     int idx;
-    for(int step=0; step <= n/BLOCK_SIZE; step++)
-    {
-        int step_x = step * BLOCK_SIZE + threadIdx.x;
+    for(int step = 0; step < n/BLOCK_SIZE; ++step){
+        int step_x = step*BLOCK_SIZE + threadIdx.x;
         int step_y = y;
         idx = step_y * n + step_x;
-        if(step_x >= n || step_y >= m)
-        {
-            sub_a[threadIdx.y][threadIdx.x] =0;
-        }
-        else
-        {
+        if(step_y<m && step_x<n){
             sub_a[threadIdx.y][threadIdx.x] = a[idx];
+        }else{
+            sub_a[threadIdx.y][threadIdx.x] = 0; 
         }
 
-        step_x = x;
         step_y = step * BLOCK_SIZE + threadIdx.y;
-        idx = step_y * k +step_x;
-        if(step_x >= k || step_y >= n)
-        {
+        step_x = x;
+        idx = step_y*k + step_x;
+        if(step_x<k && step_y<n){
+            sub_b[threadIdx.y][threadIdx.x] = b[idx];
+        }else{
             sub_b[threadIdx.y][threadIdx.x] = 0;
         }
-        else
-        {
-            sub_b[threadIdx.y][threadIdx.x] = b[idx];
-        }
 
         __syncthreads();
 
-        for(int i = 0; i < BLOCK_SIZE; i++)
-        {
-            tmp +=sub_a[threadIdx.y][i] * sub_b[i][threadIdx.x];
+        for(int i=0; i<BLOCK_SIZE; ++i){
+            temp += sub_a[threadIdx.y][i] * sub_b[i][threadIdx.x];
         }
+
         __syncthreads();
     }
 
-    if ( x < k && y < m)
-    {
-        c[y*k + x] = tmp; 
+    if(x<k && y<m){
+        c[y*k + x] = temp;
     }
 }
+
 
 void cpu_matrix(int* a, int* b, int* c, int m, int n, int k)
 {
@@ -117,6 +111,8 @@ void cpu_matrix(int* a, int* b, int* c, int m, int n, int k)
         }
     }
 }
+
+
 
 int main()
 {
