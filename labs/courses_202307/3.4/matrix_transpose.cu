@@ -27,7 +27,7 @@ __global__ void gpu_shared_matrix_transpose(int *a, int *b, int m, int n){
     __shared__ int s_a[(BLOCK_SIZE+1)* BLOCK_SIZE];
 
     if(x<n && y<m){
-        s_a[threadIdx.y * BLOCK_SIZE + threadIdx.x] = a[x*m + y];
+        s_a[threadIdx.x * BLOCK_SIZE + threadIdx.y] = a[x*m + y];
     }
 
     __syncthreads();
