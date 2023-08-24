@@ -123,3 +123,6 @@ int main(int argc, char const* argv[])
 
     return 0;
 }
+// 就是将matrix 切分成 block，每一个block内再单独去对两部分数据做替换
+// 只做右上角或者只做右下角的部分矩阵，同时对两部分数据做in place 置换
+// 这样的效果
